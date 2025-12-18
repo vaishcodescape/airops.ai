@@ -3,6 +3,7 @@ Using A.I agents to your advantage Airops allows users to carry out tasks in a a
 
 # Tech Stack:
 -React.js 19
+
 -Electron.js
 -Tailwind CSS
 -Shadcn/UI
