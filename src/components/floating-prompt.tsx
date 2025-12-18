@@ -4,6 +4,7 @@ import { ResponseBox } from './response-box'
 import { Kbd } from './ui/kbd'
 import { Separator } from './ui/separator'
 
+
 const placeholders = ['Ask Anything...', 'Automate your tasks with AirOps']
 
 export function FloatingNavbar() {
