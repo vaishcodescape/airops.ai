@@ -1,8 +1,6 @@
-import { app, BrowserWindow } from "electron";
-import { createRequire } from "node:module";
+import { app, BrowserWindow, screen } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-createRequire(import.meta.url);
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -11,14 +9,34 @@ const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
 let win;
 function createWindow() {
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width: screenWidth } = primaryDisplay.workAreaSize;
+  const windowWidth = 650;
+  const windowHeight = 500;
+  const x = Math.floor((screenWidth - windowWidth) / 2);
+  const y = 20;
   win = new BrowserWindow({
-    icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
+    width: windowWidth,
+    height: windowHeight,
+    x,
+    y,
+    resizable: false,
+    movable: true,
+    minimizable: false,
+    maximizable: false,
+    frame: false,
+    transparent: true,
+    backgroundColor: "#00000000",
+    hasShadow: false,
+    alwaysOnTop: true,
     webPreferences: {
-      preload: path.join(__dirname$1, "preload.mjs")
+      preload: path.join(__dirname$1, "preload.mjs"),
+      contextIsolation: true,
+      nodeIntegration: false
     }
   });
   win.webContents.on("did-finish-load", () => {
-    win == null ? void 0 : win.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
+    win?.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
   });
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
