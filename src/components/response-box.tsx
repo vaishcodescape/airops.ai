@@ -1,6 +1,7 @@
 import { Copy, Check } from 'lucide-react'
 import { useState } from 'react'
 
+import { Checkbox } from '@/components/ui/checkbox'
 interface ResponseBoxProps {
   response: string
   onClose: () => void
@@ -21,18 +22,21 @@ export function ResponseBox({ response, onClose }: ResponseBoxProps) {
         {response}
       </div>
       <div className="response-footer" onClick={(e) => e.stopPropagation()}>
-        <button 
+        <button
           onClick={handleCopy}
           className="response-copy-btn"
         >
           {copied ? (
             <>
-              <Check className="w-3.5 h-3.5" />
+              <Checkbox
+                checked={true}
+                className="w-3.5 h-3.5 pointer-events-none border-zinc-600"
+              />
               <span>Copied</span>
             </>
           ) : (
             <>
-              <Copy className="w-3.5 h-3.5" />
+              <Copy className="w-3.5 h-3.5 transition-transform group-hover:rotate-12 duration-200" />
               <span>Copy</span>
             </>
           )}
