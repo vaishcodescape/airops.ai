@@ -5,7 +5,7 @@ import { Kbd } from './ui/kbd'
 import { Separator } from './ui/separator'
 
 
-const placeholders = ['Ask Anything...', 'Automate your tasks with AirOps']
+const placeholders = ['Automate Anything...', 'Automate your tasks with AirOps']
 
 export function FloatingNavbar() {
   const [input, setInput] = useState('')
@@ -29,13 +29,14 @@ export function FloatingNavbar() {
     setTimeout(() => setIsTransitioning(false), 300)
   }, [])
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (!input.trim()) return
     setResponse(`${input}\n\nThis is a sample response. Connect to your AI backend to get real responses.`)
     setInput('')
-  }
+  }, [input])
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    
     // Cmd/Ctrl + M to minimize/expand
     if ((e.metaKey || e.ctrlKey) && e.key === 'm') {
       e.preventDefault()
