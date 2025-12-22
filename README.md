@@ -1,5 +1,6 @@
 # AirOps.ai
-Using A.I agents to your advantage AirOps allows users to carry out tasks in a automated way using a simple prompt interface on a computer system.
+Using A.I agents to your advantage AirOps allows users to carry out tasks in a automated way using a simple prompt interface on a computer system. 
+Orchestrate A.I Agents with a click of a prompt.
 
 - Automate your daily tasks with just a click of a prompt.
 
