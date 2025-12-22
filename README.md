@@ -6,4 +6,4 @@ Using A.I agents to your advantage AirOps allows users to carry out tasks in a a
 - Automate your daily tasks with just a click of a prompt.
 
 - Created using React.js and wrapped using Electron
--Native Desktop Support Capability
+-Native Desktop Support for MacOS, Linux and Windows
