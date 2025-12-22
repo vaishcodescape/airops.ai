@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ArrowRight, Settings, Clock, Sparkles, Loader2, Wrench } from 'lucide-react'
+import { ArrowRight, Settings, Clock, Loader2, Wrench } from 'lucide-react'
 import { ResponseBox } from './response-box'
 import { Kbd } from './ui/kbd'
 import { Separator } from './ui/separator'
@@ -43,7 +43,7 @@ export function FloatingNavbar() {
 
   const handleSubmit = useCallback(() => {
     if (!input.trim() || isLoading) return
-    
+
     setIsLoading(true)
     // Simulate API call
     setTimeout(() => {
@@ -54,7 +54,7 @@ export function FloatingNavbar() {
   }, [input, isLoading])
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    
+
     // Cmd/Ctrl + M to minimize/expand
     if ((e.metaKey || e.ctrlKey) && e.key === 'm') {
       e.preventDefault()
@@ -126,7 +126,7 @@ export function FloatingNavbar() {
             <div className={`status-dot ${getStatusColor()}`} />
             <span className="status-text">{getStatusText()}</span>
           </div>
-          <button 
+          <button
             className="icon-button no-drag"
             onClick={() => setShowSettings(!showSettings)}
             title="Settings (⌘,)"
@@ -140,21 +140,24 @@ export function FloatingNavbar() {
         className={`navbar-container drag-region ${minimized ? 'minimized' : 'expanded'}`}
         onClick={minimized ? toggleMinimize : undefined}
       >
-        <span className={`minimized-letter ${minimized ? 'visible' : 'hidden'}`}>
-          <Sparkles className="w-5 h-5" />
+        <span className={`minimized-letter ${minimized ? 'visible' : 'hidden'}`} style={{ fontSize: '25px', fontWeight: 'bold' }}>
+          A
         </span>
 
         <div className={`navbar-content ${minimized ? 'hidden' : 'visible'}`}>
           {/* Chat history icon */}
           <div className="relative no-drag">
-            <button 
+            <button
               className="icon-button-large"
               title="Chat history"
-              onClick={() => setShowHistory(!showHistory)}
+              onClick={() => {
+                setShowHistory(!showHistory)
+                if (showHistory) setShowTools(false)
+              }}
             >
               <Clock className="w-3.5 h-3.5" />
             </button>
-            
+
             {showHistory && (
               <div className="history-dropdown">
                 <div className="history-header">Recent Chats</div>
@@ -179,14 +182,17 @@ export function FloatingNavbar() {
 
           {/* Tools dropdown */}
           <div className="relative no-drag">
-            <button 
+            <button
               className="icon-button-large"
               title="Tools"
-              onClick={() => setShowTools(!showTools)}
+              onClick={() => {
+                setShowTools(!showTools)
+                if (!showTools) setShowHistory(false)
+              }}
             >
               <Wrench className="w-3.5 h-3.5" />
             </button>
-            
+
             {showTools && (
               <div className="history-dropdown">
                 <div className="history-header">Tools</div>
@@ -248,7 +254,7 @@ export function FloatingNavbar() {
               </span>
             )}
             {isLoading && (
-              <span className="absolute left-0 top-1/2 -translate-y-1/2 text-zinc-500 text-[13px] font-normal pointer-events-none flex items-center gap-2">
+              <span className="absolute right-0 top-1/2 -translate-y-1/2 text-zinc-500 text-[13px] font-normal pointer-events-none flex items-center gap-2 ">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 Processing...
               </span>
