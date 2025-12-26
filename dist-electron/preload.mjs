@@ -16,7 +16,9 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   invoke(...args) {
     const [channel, ...omit] = args;
     return electron.ipcRenderer.invoke(channel, ...omit);
-  }
-  // You can expose other APTs you need here.
-  // ...
+  },
+  // Screen capture API
+  captureScreen: () => electron.ipcRenderer.invoke("capture-screen"),
+  checkPermissions: () => electron.ipcRenderer.invoke("check-permissions"),
+  requestPermissions: () => electron.ipcRenderer.invoke("request-permissions")
 });

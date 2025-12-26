@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ArrowRight, Settings, Clock, Loader2, Wrench } from 'lucide-react'
+import { ArrowRight, Settings, Clock, Loader2, Wrench, Monitor } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { ResponseBox } from './response-box'
 import { Kbd } from './ui/kbd'
 import { Separator } from './ui/separator'
@@ -14,13 +15,15 @@ export function FloatingNavbar() {
   const [placeholderIndex, setPlaceholderIndex] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
   const [minimized, setMinimized] = useState(false)
-  const [isTransitioning, setIsTransitioning] = useState(false)
   const [response, setResponse] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isCapturingScreen, setIsCapturingScreen] = useState(false)
+  const [screenshot, setScreenshot] = useState<string | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connected')
   const [showSettings, setShowSettings] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [showTools, setShowTools] = useState(false)
+  const [showScreenshotDropdown, setShowScreenshotDropdown] = useState(false)
   const [chatHistory, setChatHistory] = useState([
     { id: 1, query: 'How do I automate email workflows?', timestamp: '2 hours ago' },
     { id: 2, query: 'Create a customer onboarding flow', timestamp: '5 hours ago' },
@@ -29,29 +32,60 @@ export function FloatingNavbar() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const toggleMinimize = useCallback(() => {
-    setIsTransitioning(true)
     setMinimized((prev) => {
       const newState = !prev
       // Focus input when expanding
       if (!newState) {
-        setTimeout(() => inputRef.current?.focus(), 300)
+        setTimeout(() => inputRef.current?.focus(), 250)
       }
       return newState
     })
-    setTimeout(() => setIsTransitioning(false), 300)
   }, [])
 
+  const handleCaptureScreen = useCallback(async (silent = false) => {
+    if (!window.ipcRenderer || isCapturingScreen) return
+
+    try {
+      setIsCapturingScreen(true)
+      const dataUrl = await window.ipcRenderer.captureScreen()
+      setScreenshot(dataUrl)
+      
+      // Only add text notification if not silent (manual capture)
+      if (!silent && !input.trim()) {
+        // Silent auto-capture doesn't add text
+      }
+    } catch (error) {
+      console.error('Failed to capture screen:', error)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      
+      // Only show error to user if not silent or if it's a permission error
+      if (!silent || errorMessage.toLowerCase().includes('permission')) {
+        alert(`Screen capture failed: ${errorMessage}\n\nIf on macOS, please grant screen recording permissions in System Settings > Privacy & Security > Screen Recording.`)
+      }
+    } finally {
+      setIsCapturingScreen(false)
+    }
+  }, [input, isCapturingScreen])
+
   const handleSubmit = useCallback(() => {
-    if (!input.trim() || isLoading) return
+    if ((!input.trim() && !screenshot) || isLoading) return
 
     setIsLoading(true)
-    // Simulate API call
+
+    // Include screenshot data in the prompt if available
+    const promptWithScreenshot = screenshot 
+      ? `${input}\n\n[Screenshot: ${screenshot.substring(0, 50)}...]`
+      : input
+
+    // Dummy API call
     setTimeout(() => {
-      setResponse(`${input}\n\nThis is a sample response. Connect to your AI backend to get real responses.`)
+      setResponse(`${promptWithScreenshot}\n\nThis is a sample response. Connect to your AI backend to get real responses.`)
       setInput('')
+      setScreenshot(null)
+      setShowScreenshotDropdown(false)
       setIsLoading(false)
     }, 1500)
-  }, [input, isLoading])
+  }, [input, screenshot, isLoading])
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
 
@@ -73,7 +107,12 @@ export function FloatingNavbar() {
       e.preventDefault()
       setShowSettings((prev) => !prev)
     }
-  }, [toggleMinimize, response, minimized])
+    // Cmd/Ctrl + Shift + S to manually recapture screen
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 's') {
+      e.preventDefault()
+      handleCaptureScreen(false) // Manual capture (not silent)
+    }
+  }, [toggleMinimize, response, minimized, handleCaptureScreen])
 
   const handleInputKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -86,6 +125,25 @@ export function FloatingNavbar() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
+
+  // Track if we need to capture (on mount or when expanding)
+  const shouldCaptureRef = useRef(true)
+
+  // Automatically capture screen when component mounts or when expanding
+  useEffect(() => {
+    if (!minimized && window.ipcRenderer && shouldCaptureRef.current) {
+      // Small delay to ensure smooth expansion animation
+      const timer = setTimeout(() => {
+        handleCaptureScreen(true) // Silent auto-capture
+        shouldCaptureRef.current = false
+      }, 300)
+      return () => clearTimeout(timer)
+    } else if (minimized) {
+      // Reset flag when minimized so we capture again when expanded
+      shouldCaptureRef.current = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minimized])
 
   useEffect(() => {
     if (minimized) return
@@ -117,11 +175,117 @@ export function FloatingNavbar() {
     }
   }
 
+  const containerVariants = {
+    expanded: {
+      width: 520,
+      height: 46,
+      paddingLeft: 14,
+      paddingRight: 5,
+      paddingTop: 0,
+      paddingBottom: 0,
+      borderRadius: 23,
+      scale: 1,
+      transition: {
+        type: "spring" as const,
+        stiffness: 500,
+        damping: 35,
+        mass: 0.5
+      }
+    },
+    minimized: {
+      width: 46,
+      height: 46,
+      padding: 0,
+      borderRadius: 23,
+      scale: 0.98,
+      transition: {
+        type: "spring" as const,
+        stiffness: 500,
+        damping: 35,
+        mass: 0.5
+      }
+    }
+  }
+
+  const letterVariants = {
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        delay: 0.05,
+        type: "spring" as const,
+        stiffness: 600,
+        damping: 30
+      }
+    },
+    hidden: {
+      opacity: 0,
+      scale: 0.3,
+      transition: {
+        type: "spring" as const,
+        stiffness: 600,
+        damping: 30
+      }
+    }
+  }
+
+  const contentVariants = {
+    visible: {
+      opacity: 1,
+      scale: 1,
+      x: 0,
+      transition: {
+        delay: 0.06,
+        type: "spring" as const,
+        stiffness: 500,
+        damping: 35
+      }
+    },
+    hidden: {
+      opacity: 0,
+      scale: 0.92,
+      x: -8,
+      transition: {
+        type: "spring" as const,
+        stiffness: 500,
+        damping: 35
+      }
+    }
+  }
+
+  const statusBarVariants = {
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring" as const,
+        stiffness: 500,
+        damping: 35
+      }
+    },
+    hidden: {
+      opacity: 0,
+      y: -10,
+      transition: {
+        type: "spring" as const,
+        stiffness: 500,
+        damping: 35
+      }
+    }
+  }
+
   return (
     <div className="h-full flex flex-col items-center justify-start pt-5 gap-2">
       {/* Status bar - only when expanded */}
+      <AnimatePresence>
       {!minimized && (
-        <div className="status-bar drag-region">
+          <motion.div
+            className="status-bar drag-region"
+            variants={statusBarVariants}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+          >
           <div className="flex items-center gap-2">
             <div className={`status-dot ${getStatusColor()}`} />
             <span className="status-text">{getStatusText()}</span>
@@ -133,18 +297,44 @@ export function FloatingNavbar() {
           >
             <Settings className="w-3.5 h-3.5" />
           </button>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div
-        className={`navbar-container drag-region ${minimized ? 'minimized' : 'expanded'}`}
+      <motion.div
+        className="navbar-container drag-region"
+        variants={containerVariants}
+        animate={minimized ? "minimized" : "expanded"}
+        initial={false}
         onClick={minimized ? toggleMinimize : undefined}
+        whileHover={minimized ? { 
+          scale: 1.08,
+          transition: { type: "spring" as const, stiffness: 600, damping: 30 }
+        } : {}}
+        whileTap={minimized ? { 
+          scale: 0.92,
+          transition: { type: "spring" as const, stiffness: 600, damping: 30 }
+        } : {}}
       >
-        <span className={`minimized-letter ${minimized ? 'visible' : 'hidden'}`} style={{ fontSize: '25px', fontWeight: 'bold' }}>
-          A
-        </span>
+        <motion.div
+          className="minimized-letter-wrapper"
+          variants={letterVariants}
+          animate={minimized ? "visible" : "hidden"}
+          initial={false}
+        >
+          <img
+            src="/AirOps.ai Logo.svg"
+            alt="AirOps"
+            className="minimized-letter"
+          />
+        </motion.div>
 
-        <div className={`navbar-content ${minimized ? 'hidden' : 'visible'}`}>
+        <motion.div
+          className="navbar-content"
+          variants={contentVariants}
+          animate={minimized ? "hidden" : "visible"}
+          initial={false}
+        >
           {/* Chat history icon */}
           <div className="relative no-drag">
             <button
@@ -152,7 +342,10 @@ export function FloatingNavbar() {
               title="Chat history"
               onClick={() => {
                 setShowHistory(!showHistory)
-                if (!showHistory) setShowTools(false)
+                if (!showHistory) {
+                  setShowTools(false)
+                  setShowScreenshotDropdown(false)
+                }
               }}
             >
               <Clock className="w-3.5 h-3.5" />
@@ -180,6 +373,69 @@ export function FloatingNavbar() {
             )}
           </div>
 
+          {/* Screen capture button - manual recapture */}
+          <div className="relative no-drag">
+            <button
+              className="icon-button-large"
+              title="Screen capture (⌘⇧S)"
+              onClick={() => {
+                if (screenshot) {
+                  setShowScreenshotDropdown(!showScreenshotDropdown)
+                  setShowTools(false)
+                  setShowHistory(false)
+                } else {
+                  handleCaptureScreen(false)
+                }
+              }}
+              disabled={isCapturingScreen || minimized}
+            >
+              {isCapturingScreen ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Monitor className={`w-3.5 h-3.5 ${screenshot ? 'text-emerald-400' : ''}`} />
+              )}
+            </button>
+
+            {screenshot && showScreenshotDropdown && (
+              <div className="history-dropdown" style={{ minWidth: '280px' }}>
+                <div className="history-header flex items-center justify-between">
+                  <span>Screenshot Captured</span>
+                  <span className="text-emerald-400 text-[10px] font-medium">Ready</span>
+                </div>
+                <div className="p-3">
+                  <div className="rounded-lg overflow-hidden border border-zinc-700/50 bg-zinc-900/50 mb-2">
+                    <img 
+                      src={screenshot} 
+                      alt="Screenshot" 
+                      className="w-full h-auto max-h-[200px] object-contain"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="flex-1 px-3 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 rounded-md border border-zinc-700 hover:border-zinc-600 transition-colors"
+                      onClick={() => {
+                        handleCaptureScreen(false)
+                        setShowScreenshotDropdown(false)
+                      }}
+                    >
+                      Recapture
+                    </button>
+                    <button
+                      className="px-3 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 rounded-md border border-zinc-700 hover:border-zinc-600 transition-colors"
+                      onClick={() => {
+                        setScreenshot(null)
+                        setShowScreenshotDropdown(false)
+                      }}
+                      title="Remove screenshot"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Tools dropdown */}
           <div className="relative no-drag">
             <button
@@ -187,7 +443,10 @@ export function FloatingNavbar() {
               title="Tools"
               onClick={() => {
                 setShowTools(!showTools)
-                if (!showTools) setShowHistory(false)
+                if (!showTools) {
+                  setShowHistory(false)
+                  setShowScreenshotDropdown(false)
+                }
               }}
             >
               <Wrench className="w-3.5 h-3.5" />
@@ -243,7 +502,7 @@ export function FloatingNavbar() {
               onKeyDown={handleInputKeyDown}
               className="w-full bg-transparent border-none outline-none text-zinc-100 text-[13px] font-normal"
               placeholder=""
-              disabled={minimized || isTransitioning || isLoading}
+              disabled={minimized || isLoading}
             />
             {!input && !isLoading && (
               <span
@@ -266,7 +525,7 @@ export function FloatingNavbar() {
               ? 'active'
               : 'inactive'
               }`}
-            disabled={minimized || isTransitioning || !input.trim() || isLoading}
+            disabled={minimized || (!input.trim() && !screenshot) || isLoading}
           >
             {isLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -274,8 +533,8 @@ export function FloatingNavbar() {
               <ArrowRight className="w-4 h-4" strokeWidth={2} />
             )}
           </button>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Keyboard shortcuts hint */}
       {!minimized && !response && (
@@ -283,6 +542,11 @@ export function FloatingNavbar() {
           <div className="flex items-center gap-1.5">
             <Kbd>⌘ M</Kbd>
             <span>Minimize</span>
+          </div>
+          <Separator orientation="vertical" className="h-3 bg-zinc-700/50" />
+          <div className="flex items-center gap-1.5">
+            <Kbd>⌘⇧ S</Kbd>
+            <span>Capture</span>
           </div>
           <Separator orientation="vertical" className="h-3 bg-zinc-700/50" />
           <div className="flex items-center gap-1.5">
