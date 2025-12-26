@@ -7,3 +7,20 @@ Using A.I agents to your advantage AirOps allows users to carry out tasks in a a
 
 - Created using React.js and wrapped using Electron
 -Native Desktop Support for MacOS, Linux and Windows
+### Installation
+
+1. Clone the repository:
+```bash
+git clone 
+cd airops.ai
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Run the development server:
+```bash
+npm run dev
+```
