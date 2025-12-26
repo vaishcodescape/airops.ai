@@ -11,7 +11,7 @@ Using A.I agents to your advantage AirOps allows users to carry out tasks in a a
 
 1. Clone the repository:
 ```bash
-git clone 
+git clone https://github.com/vaishcodescape/airops.ai.git
 cd airops.ai
 ```
 
