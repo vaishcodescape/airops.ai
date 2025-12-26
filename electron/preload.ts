@@ -18,7 +18,9 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
     const [channel, ...omit] = args
     return ipcRenderer.invoke(channel, ...omit)
   },
-
-  // You can expose other APTs you need here.
-  // ...
+  
+  // Screen capture API
+  captureScreen: () => ipcRenderer.invoke('capture-screen'),
+  checkPermissions: () => ipcRenderer.invoke('check-permissions'),
+  requestPermissions: () => ipcRenderer.invoke('request-permissions'),
 })

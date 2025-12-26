@@ -388,29 +388,30 @@
   transform: scale(0.92);
 }
 
-/* Minimized letter */
-.minimized-letter {
+/* Minimized letter / logo wrapper */
+.minimized-letter-wrapper {
   position: absolute;
-  color: #fafafa;
-  transition: 
-    opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
-    transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  width: 40px;
+  height: 40px;
+  top: 50%;
+  left: 50%;
+  margin-top: -20px;
+  margin-left: -20px;
+  border-radius: 50%;
+  overflow: hidden;
+  will-change: opacity, transform;
+  pointer-events: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  will-change: opacity, transform;
 }
 
-.minimized-letter.visible {
-  opacity: 1;
-  transform: scale(1);
-  transition-delay: 0.15s;
-}
-
-.minimized-letter.hidden {
-  opacity: 0;
-  transform: scale(0.3);
-  transition-delay: 0s;
+/* Minimized letter / logo image */
+.minimized-letter {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 /* Navbar content */

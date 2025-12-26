@@ -1,15 +1,20 @@
 // @see - https://www.electron.build/configuration/configuration
+// Note: For app icons, electron-builder requires PNG format (at least 512x512).
+// The icon is generated from "public/AirOps.ai Logo.svg" and saved as "public/icon.png"
+// electron-builder will automatically generate platform-specific formats (.icns for macOS, .ico for Windows)
 {
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
-  "appId": "YourAppID",
+  "appId": "com.airops.ai",
   "asar": true,
-  "productName": "YourAppName",
+  "productName": "AirOps.ai",
+  "icon": "public/icon.png",
   "directories": {
     "output": "release/${version}"
   },
   "files": [
     "dist",
-    "dist-electron"
+    "dist-electron",
+    "public"
   ],
   "mac": {
     "target": [
