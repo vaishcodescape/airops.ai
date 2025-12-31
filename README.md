@@ -24,3 +24,4 @@ npm install
 ```bash
 npm run dev
 ```
+- Future Scopes a propr Agentic A.I infused backend 
